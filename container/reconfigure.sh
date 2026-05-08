@@ -1,12 +1,16 @@
-#!/bin/bash
-
+#!/usr/bin/env bash
 set -e
 
 DEST="$1"
 
-# Split PASSTHROUGH_USER@REST_OF_DEST
-PASSTHROUGH_USER="${DEST%@*}"
+# Split DEST_USER@REST_OF_DEST
+DEST_USER="${DEST%@*}"
 REST_OF_DEST="${DEST#*@}"
+
+if [ -z $DEST ] || [[ "$DEST" != *@* ]]; then
+    echo "Usage: reconfigure <username@host[:port]>"
+    exit 1
+fi
 
 # Split REST_OF_DEST:DEST_PORT if DEST_PORT is provided.
 if [[ "$REST_OF_DEST" == *:* ]]; then
@@ -17,15 +21,12 @@ else
     DEST_PORT="22"
 fi
 
+# initialize CLIENT_DEST if not set.
+CLIENT_DEST="${CLIENT_DEST:-git@sshitmaids:22}"
+
 MITM_DIR="/root/sshitmaids"
 CLIENT_DIR="/root/ssh-client"
-USER_DIR="/home/$PASSTHROUGH_USER"
-
-if [ -z "$DEST_HOST" ]; then
-    echo "Usage: $0 <destination-host> [port]"
-    echo "  example: $0 example.com 22"
-    exit 1
-fi
+USER_DIR="/home/$DEST_USER"
 
 # Validate port is numeric
 if ! echo "$DEST_PORT" | grep -Eq '^[0-9]+$'; then
@@ -56,12 +57,12 @@ done
 
 echo "   mitm's .ssh/authorized_keys built"
 
-echo "3. Writing SSH config for MITM ($PASSTHROUGH_USER user)..."
+echo "3. Writing SSH config for MITM ($DEST_USER user)..."
 cat > "$MITM_DIR/config" <<EOF
 Host dest
     HostName $DEST_HOST
     Port $DEST_PORT
-    User $PASSTHROUGH_USER
+    User $DEST_USER
     IdentityFile /$USER_DIR/.ssh/id_ed25519
     UserKnownHostsFile /$USER_DIR/.ssh/known_hosts
     StrictHostKeyChecking yes
@@ -83,10 +84,10 @@ else
 fi
 
 echo "5. Ensuring root user ephemeral .ssh dir..."
-# NOTE: .ssh dirs inside /home/$PASSTHROUGH_USER and /root are ephemeral The
+# NOTE: .ssh dirs inside /home/$DEST_USER and /root are ephemeral The
 # "master" copies of SSH keys and config live in the bound volume dirs:
 #   - /root/sshitmaids/ 
-#   - /root/client/
+#   - /root/ssh-client/
 #
 # This is intentional so secrets/config are managed externally and persist
 # across containers.
@@ -101,20 +102,20 @@ if [ -d $MITM_DIR ]; then
     cp -f $MITM_DIR/* /root/.ssh/ 2>/dev/null || true
 fi
 
-echo "6. Ensuring $PASSTHROUGH_USER & ephemeral .ssh dir..."
+echo "6. Ensuring $DEST_USER & ephemeral .ssh dir..."
 
 if [ ! -d $USER_DIR ]; then
-    echo "  Creating home directory for $PASSTHROUGH_USER user..."
+    echo "  Creating home directory for $DEST_USER user..."
     mkdir -p $USER_DIR 2>/dev/null
 else
-    echo "  $PASSTHROUGH_USER home directory exists."
+    echo "  $DEST_USER home directory exists."
 fi
-if [ -z "$(id $PASSTHROUGH_USER 2>/dev/null)" ]; then
-    echo "   Creating $PASSTHROUGH_USER user..."
-    useradd -m -G $PASSTHROUGH_USER -s /bin/bash $PASSTHROUGH_USER 2>/dev/null || true
+if [ -z "$(id $DEST_USER 2>/dev/null)" ]; then
+    echo "   Creating $DEST_USER user..."
+    useradd -m -G $DEST_USER -s /bin/bash $DEST_USER 2>/dev/null || true
 fi
 
-# Setup $PASSTHROUGH_USER .ssh directory
+# Setup $DEST_USER .ssh directory
 mkdir -p $USER_DIR/.ssh
 rm -rf $USER_DIR/.ssh/*
 cp -r $MITM_DIR/* $USER_DIR/.ssh/ 2>/dev/null || true
@@ -126,33 +127,46 @@ chmod 600 /root/.ssh/* 2>/dev/null || touch /root/.ssh/.placeholder
 chown root:root /root/.ssh
 chown root:root -R /root/.ssh* 2>/dev/null || touch /root/.ssh/.placeholder
 
-echo "   and $PASSTHROUGH_USER..."
-chown $PASSTHROUGH_USER:$PASSTHROUGH_USER $USER_DIR/.ssh
+echo "   and $DEST_USER..."
+chown $DEST_USER:$DEST_USER $USER_DIR/.ssh
 chmod 700 $USER_DIR/.ssh
 chmod 600 $USER_DIR/.ssh/*
-chown $PASSTHROUGH_USER:$PASSTHROUGH_USER -R $USER_DIR/.ssh 2>/dev/null || touch $USER_DIR/.ssh/.placeholder
+chown $DEST_USER:$DEST_USER -R $USER_DIR/.ssh 2>/dev/null || touch $USER_DIR/.ssh/.placeholder
 
-echo "8. Configure sshd for $PASSTHROUGH_USER user..."
-if ! grep -q "Match User $PASSTHROUGH_USER" /etc/ssh/sshd_config; then
-    echo "  Adding Match User $PASSTHROUGH_USER block to /etc/ssh/sshd_config..."
-    printf "\nMatch User $PASSTHROUGH_USER\n    ForceCommand /usr/local/bin/dest-mitm\n" >> /etc/ssh/sshd_config
-    echo "   Match User $PASSTHROUGH_USER block added to sshd_config"
+echo "8. Configure sshd for $DEST_USER user..."
+if ! grep -q "Match User $DEST_USER" /etc/ssh/sshd_config; then
+    echo "  Adding Match User $DEST_USER block to /etc/ssh/sshd_config..."
+    printf "\nMatch User $DEST_USER\n    ForceCommand /usr/local/bin/dest-mitm\n" >> /etc/ssh/sshd_config
+    echo "   Match User $DEST_USER block added to sshd_config"
 else
-    echo "   Match User $PASSTHROUGH_USER block already exists in sshd_config"
+    echo "   Match User $DEST_USER block already exists in sshd_config"
 fi
 
 echo "9. Client configuration (SSH config and known_hosts)..."
 if [ "$GENERATE_CLIENT_CONFIG" = "true" ]; then
+    # Split CLIENT_DEST_USER@REST_OF_DEST
+    CLIENT_DEST_USER="${CLIENT_DEST%@*}"
+    REST_OF_CLIENT_DEST="${CLIENT_DEST#*@}"
+
+    # Split REST_OF_DEST:DEST_PORT if DEST_PORT is provided.
+    if [[ "$REST_OF_DEST" == *:* ]]; then
+        CLIENT_DEST_HOST="${REST_OF_CLIENT_DEST%%:*}"
+        CLIENT_DEST_PORT="${REST_OF_CLIENT_DEST#*:}"
+    else
+        CLIENT_DEST_HOST="$REST_OF_CLIENT_DEST"
+        CLIENT_DEST_PORT="22"
+    fi
     cat > "$CLIENT_DIR/config" <<EOF
 Host $DEST_HOST
-    HostName sshitmaids
-    Port 22
-    User root
+    HostName $CLIENT_DEST_HOST
+    Port $CLIENT_DEST_PORT
+    User $CLIENT_DEST_USER
     IdentityFile ~/.ssh/id_ed25519
 EOF
     echo "   client ssh config generated"
 
-    # Client known_hosts - copy from MITM, no keyscan performed
+    # Client known_hosts - copy from MITM, no keyscan performed.
+    # TODO: This is wrong, should be built from sshitmaids .pub files.
     if [ -f "$MITM_DIR/known_hosts" ]; then
         cp "$MITM_DIR/known_hosts" "$CLIENT_DIR/known_hosts"
         echo "   copied $DEST_HOST known_hosts for client"

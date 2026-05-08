@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+# Initialize SSHITMAIDS_DEST if not set.
+SSHITMAIDS_DEST="${SSHITMAIDS_DEST:-"git@github.com:22"}"
+
 ### Call reconfigure (idempotent rebuild)
 # reconfigure.sh is always at /reconfigure (guaranteed by Dockerfile)
 if [ -x /reconfigure ]; then
