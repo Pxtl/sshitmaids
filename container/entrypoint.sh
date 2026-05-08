@@ -2,20 +2,20 @@
 set -e
 
 ### Call reconfigure (idempotent rebuild)
-# reconfigure.sh is always at /reconfigure.sh (guaranteed by Dockerfile)
-if [ -x /reconfigure.sh ]; then
-    echo "Calling reconfigure.sh $SSHITMAIDS_DEST_HOST:$SSHITMAIDS_DEST_PORT..."
-    ./reconfigure.sh "$SSHITMAIDS_DEST_HOST" "$SSHITMAIDS_DEST_PORT"
+# reconfigure.sh is always at /reconfigure (guaranteed by Dockerfile)
+if [ -x /reconfigure ]; then
+    echo "Calling reconfigure $SSHITMAIDS_DEST..."
+    ./reconfigure "$SSHITMAIDS_DEST"
 else
-    echo "ERROR: /reconfigure.sh not found. Image build failed."
+    echo "ERROR: /reconfigure not found. Image build failed."
     exit 1
 fi
 
-echo "Confirming sshd is running (in case reconfigure.sh didn't start it)..."
+echo "Confirming sshd is running (in case reconfigure didn't start it)..."
 if [ -n "$(ps -C sshd --no-headers)" ]; then
     echo "sshd is running."
 else
-    echo "ERROR: sshd is not running, startup failed. Check reconfigure.sh logs for errors."
+    echo "ERROR: sshd is not running, startup failed. Check reconfigure logs for errors."
     exit 1
 fi
 

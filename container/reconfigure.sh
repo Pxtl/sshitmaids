@@ -2,13 +2,24 @@
 
 set -e
 
-DEST_HOST="$1"
-DEST_PORT=${2:-"22"}
+DEST="$1"
+
+# Split PASSTHROUGH_USER@REST_OF_DEST
+PASSTHROUGH_USER="${DEST%@*}"
+REST_OF_DEST="${DEST#*@}"
+
+# Split REST_OF_DEST:DEST_PORT if DEST_PORT is provided.
+if [[ "$REST_OF_DEST" == *:* ]]; then
+    DEST_HOST="${REST_OF_DEST%%:*}"
+    DEST_PORT="${REST_OF_DEST#*:}"
+else
+    DEST_HOST="$REST_OF_DEST"
+    DEST_PORT="22"
+fi
+
 MITM_DIR="/root/sshitmaids"
 CLIENT_DIR="/root/ssh-client"
-PASSTHROUGH_USER="git"
 USER_DIR="/home/$PASSTHROUGH_USER"
-
 
 if [ -z "$DEST_HOST" ]; then
     echo "Usage: $0 <destination-host> [port]"
@@ -131,7 +142,7 @@ else
 fi
 
 echo "9. Client configuration (SSH config and known_hosts)..."
-if [ "$SSHITMAIDS_GENERATE_CLIENT_CONFIG" = "true" ]; then
+if [ "$GENERATE_CLIENT_CONFIG" = "true" ]; then
     cat > "$CLIENT_DIR/config" <<EOF
 Host $DEST_HOST
     HostName sshitmaids

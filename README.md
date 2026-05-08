@@ -13,7 +13,8 @@ The intention is that you can simply check out this repo and use it as-is after
 populating a `.env` file and the volumes.  You can copy from `.env.example` for
 your `.env` file.
 
-- Destination server is configured with the .env var `SSHITMAIDS_DEST_HOST`
+- Destination user, server, and port is configured with the .env var
+  `SSHITMAIDS_DEST`.  eg.: `git@github.com:22`.
 - Public port is configured with the .env var `SSHITMAIDS_PORT`
 - Use `SSHITMAIDS_GENERATE_CLIENT_CONFIG=true`, which generates file in
   `./volumes/ssh/client/config` with a Host entry for the sshitmaids host, so

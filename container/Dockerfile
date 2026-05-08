@@ -12,8 +12,8 @@ COPY dest-mitm.sh /usr/local/bin/dest-mitm
 RUN chmod +x /usr/local/bin/dest-mitm
 
 # Install reconfigure (idempotent rebuild)
-COPY reconfigure.sh /reconfigure.sh
-RUN chmod +x /reconfigure.sh
+COPY reconfigure.sh /reconfigure
+RUN chmod +x /reconfigure
 
 # Install entrypoint
 COPY entrypoint.sh /entrypoint.sh

@@ -4,9 +4,9 @@ services:
     image: sshitmaids:latest
     container_name: sshitmaids
     environment:
-      - SSHITMAIDS_DEST_HOST=${SSHITMAIDS_DEST_HOST:-"github.com"}
-      - SSHITMAIDS_DEST_PORT=${SSHITMAIDS_DEST_PORT:-22}
-      - SSHITMAIDS_PORT=${SSHITMAIDS_PORT:-2222}
+      - SSHITMAIDS_DEST=${SSHITMAIDS_DEST:-"git@github.com:22"}
+      - CLIENT_SSHITMAIDS_DEST=git@sshitmaids:22
+      - GENERATE_CLIENT_CONFIG=${SSHITMAIDS_GENERATE_CLIENT_CONFIG:-"false"}
     ports:
       - "${SSHITMAIDS_PORT:-2222}:22"
     volumes:
