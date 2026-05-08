@@ -3,9 +3,8 @@
 
 ## Synopsis
 
-SSH to github (or other ssh-based foundry, theoretically, as long as they can
-SSH with the username "git") handled by a proxy that keeps user's keys secret in
-the proxy server.
+SSH to github (or other ssh-based foundry, theoretically) handled by a proxy
+that keeps user's keys secret in the proxy server.
 
 ## Usage
 
@@ -69,7 +68,7 @@ use, described above, or the client can be instructed to connect directly to the
 
 ## Why Name?
 
-I kept making the typo while working on it when it was called "sshitmaids" and
+I kept making the typo while working on it when it was called "ssh-mitm" and
 decided to roll with it.
 
 ## License
