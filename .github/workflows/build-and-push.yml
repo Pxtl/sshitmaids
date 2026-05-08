@@ -7,8 +7,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
   ACTOR: '${{ github.actor }}'
+  REPOSITORY: ${{ github.repository }}
   
 jobs:
   build:
@@ -20,8 +20,9 @@ jobs:
     steps:
       - name: Set envs
         run: |
-          echo "ACTOR_LOWERCASE=${ACTOR,,}" >> ${GITHUB_ENV}
+          echo "ACTOR_LOWERCASE=${ACTOR,,}" >> $GITHUB_ENV
           echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+          echo "REPOSITORY_LOWERCASE=${REPOSITORY,,}" >> $GITHUB_ENV
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -43,6 +44,6 @@ jobs:
           file: ./container/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.RELEASE_VERSION }}
+            ${{ env.REGISTRY }}/${{ env.REPOSITORY_LOWERCASE }}:main
+            ${{ env.REGISTRY }}/${{ env.REPOSITORY_LOWERCASE }}:latest
+            ${{ env.REGISTRY }}/${{ env.REPOSITORY_LOWERCASE }}:${{ env.RELEASE_VERSION }}
