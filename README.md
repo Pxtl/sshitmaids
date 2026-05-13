@@ -34,7 +34,7 @@ environment:
 
 ## Volumes
 
-There are two volumes needed by sshitmaids, with example docker compose bindings
+There are two read/write volumes needed by sshitmaids, with example docker compose bindings
 below:
 
 ```yaml
@@ -70,6 +70,12 @@ use, described above, or the client can be instructed to connect directly to the
 
 I kept making the typo while working on it when it was called "ssh-mitm" and
 decided to roll with it.
+
+## TODO
+- Support more simultaneous targets
+- Testing with gitlab
+- Automated testing
+- Read-only volumes
 
 ## License
 
