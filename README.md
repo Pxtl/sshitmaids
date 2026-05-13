@@ -76,6 +76,7 @@ decided to roll with it.
 - Testing with gitlab
 - Automated testing
 - Read-only volumes
+- Get `reconfigure` into path properly
 
 ## License
 
