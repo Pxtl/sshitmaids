@@ -8,7 +8,7 @@ services:
       - GENERATE_CLIENT_CONFIG=${SSHITMAIDS_GENERATE_CLIENT_CONFIG:-"false"}
       - CLIENT_DEST=${SSHITMAIDS_CLIENT_DEST:-"git@sshitmaids:22"}
     ports:
-      - "${SSHITMAIDS_PORT:-2222}:22"
+      - "${SSHITMAIDS_PUBLIC_PORT:-2222}:22"
     volumes:
       - ./volumes/sshitmaids:/root/sshitmaids
       - ./volumes/ssh-client:/root/ssh-client

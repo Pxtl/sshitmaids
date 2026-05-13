@@ -23,7 +23,7 @@ environment:
 
 - Destination user, server, and port is configured with the .env var
   `SSHITMAIDS_DEST`.  eg.: `git@github.com:22`.
-- Public port is configured with the .env var `SSHITMAIDS_PORT`
+- Public port is configured with the .env var `SSHITMAIDS_PUBLIC_PORT`
 - Use `SSHITMAIDS_GENERATE_CLIENT_CONFIG=true`, which generates config files in
   the `ssh-client` volume using the value from `CLIENT_DEST`, so this can be
   included in the clients' ssh config.  If no `CLIENT_DEST` is provided, it
@@ -64,7 +64,7 @@ know the original intended destination of the client, `.ssh/config` files are
 used to arrange the routing. An optional file can be generated for the client to
 use, described above, or the client can be instructed to connect directly to the
 `sshitmaids` server (`git@sshitmaids:22` inside the same docker net,
-`git@localhost:SSHITMAIDS_PORT` on the host).
+`git@localhost:SSHITMAIDS_PUBLIC_PORT` on the host).
 
 ## Why Name?
 
