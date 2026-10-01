@@ -1,6 +1,6 @@
 # Makefile for sshitmaids docker
 
-.PHONY: help init-sshitmaids build compose-up compose-down clean
+.PHONY: help init-sshitmaids build up down clean
 .DEFAULT_GOAL := build
 
 # Use this project name for tagging/pushing images
@@ -20,13 +20,13 @@ build:
 	docker compose build
 
 # Start the full stack (ensures network and builds agent first)
-compose-up: build
+up: build
 	@echo "Starting stack with docker compose"
 	docker compose up -d
 
-compose-down:
+down:
 	docker compose down
 
-clean: compose-down
+clean: down
 	@echo "Removing agent local image (if present)"
 	-@docker image rm $(AGENT_IMAGE) || true

@@ -4,9 +4,6 @@ RUN apt-get update && \
     apt-get install -y openssh-server openssh-client && \
     mkdir -p /var/run/sshd /root/.ssh
 
-# Generate MITM server host keys
-RUN ssh-keygen -A
-
 # Install forced command script
 COPY dest-mitm.sh /usr/local/bin/dest-mitm
 RUN chmod +x /usr/local/bin/dest-mitm

@@ -9,28 +9,35 @@ that keeps user's keys secret in the proxy server.
 ## Usage
 
 The intention is that you can simply check out this repo and use it as-is after
-populating a `.env` file and the volumes.  You can copy from `.env.example` for
-your `.env` file.
+populating a `.env` file (and possibly the volumes if you choose not to let
+sshitmaids autogenerate their content).  You can copy from `.env.example` for
+your `.env` file. Alternately, you can use the provided `docker-compose.yaml` as
+a reference to embed this into a larger docker compose environment.
 
-Example docker compose environment:
+The following example docker compose environment section lists the main expected
+environment variables:
 
 ```yaml
-environment:
-  - SSHITMAIDS_DEST=${SSHITMAIDS_DEST:-"git@github.com:22"}
-  - GENERATE_CLIENT_CONFIG=${SSHITMAIDS_GENERATE_CLIENT_CONFIG:-"false"}
-  - CLIENT_DEST=${SSHITMAIDS_CLIENT_DEST:-"git@sshitmaids:22"}
+    environment:
+      - SSHITMAIDS_DEST=${SSHITMAIDS_DEST:-"git@github.com:22"}
+      - CLIENT_DEST=${SSHITMAIDS_CLIENT_DEST:-"git@sshitmaids:22"}
+      - GENERATE_CLIENT_CONFIG=${SSHITMAIDS_GENERATE_CLIENT_CONFIG:-"false"}
+      - DO_KEYSCAN=${SSHITMAIDS_DO_KEYSCAN:-"false"}
 ```
 
-- Destination user, server, and port is configured with the .env var
-  `SSHITMAIDS_DEST`.  eg.: `git@github.com:22`.
-- Public port is configured with the .env var `SSHITMAIDS_PUBLIC_PORT`
-- Use `SSHITMAIDS_GENERATE_CLIENT_CONFIG=true`, which generates config files in
-  the `ssh-client` volume using the value from `CLIENT_DEST`, so this can be
-  included in the clients' ssh config.  If no `CLIENT_DEST` is provided, it
-  assumes sshitmaids is reachable at `git@sshitmaids:22`
-- Use `SSHITMAIDS_DO_KEYSCAN=true` to do ssh server keyscan to write
-  `known_hosts` in the `sshitmaids` volume, but github's ssh server keyscan is
-  rate-limited so requesting it regularly is pointless.
+- Destination user, server, and port is configured with the .env configuration
+  var `SSHITMAIDS_DEST`.  eg.: `git@github.com:22`.
+- If using the given `docker-compose.yaml`, the public port is configured with
+  the .env configuration var `SSHITMAIDS_PUBLIC_PORT`.
+- Use the container environment var `GENERATE_CLIENT_CONFIG=true` (corresponding
+  to the .env var `SSHITMAIDS_GENERATE_CLIENT_CONFIG`), to generate config files
+  in the `ssh-client` volume using the value from `CLIENT_DEST`.  It's up to the
+  user to copy this into the clients' ssh config.  If no `CLIENT_DEST` is
+  provided, it assumes sshitmaids is reachable at `git@sshitmaids:22`.
+- Use the container environment var `DO_KEYSCAN=true` (corresponding to the .env
+  var `SSHITMAIDS_DO_KEYSCAN`) to do ssh server keyscan to write `known_hosts`
+  in the `sshitmaids` volume, but github's ssh server keyscan is rate-limited so
+  requesting it regularly is pointless.
 
 ## Volumes
 
@@ -38,17 +45,21 @@ There are two read/write volumes needed by sshitmaids, with example docker compo
 below:
 
 ```yaml
-volumes:
-  - ./volumes/sshitmaids:/root/sshitmaids
-  - ./volumes/ssh-client:/root/ssh-client
+    volumes:
+      - ./volumes/sshitmaids:/root/sshitmaids
+      - ./volumes/ssh-client:/root/ssh-client
+    tmpfs:
+      - /root/.ssh
 ```
 
-- SSH keys go in these volumes.
+- SSH keys go in the `/root/sshitmaids` and `/root/ssh-client` volumes.
     - `sshitmaids` volume: SSH Keys for the account that you wish to use to
       connect to the target foundry (eg github).
     - `ssh-client` volume: Public SSH keys for your client that sshitmaids will
       add to `./volumes/ssh/sshitmaids/authorized_keys`, ensuring that only the
       authorized client can access the mitm server.
+      - If `GENERATE_CLIENT_CONFIG` is enabled, that client config will be
+        created in here so you can copy it to your client's `.ssh` dir.
 - All SSH keys are assumed to be `id_ed25519` and `id_ed25519.pub`.
 
 ## Reconfiguring sshitmaids

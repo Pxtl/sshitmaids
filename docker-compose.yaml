@@ -5,11 +5,14 @@ services:
     container_name: sshitmaids
     environment:
       - SSHITMAIDS_DEST=${SSHITMAIDS_DEST:-"git@github.com:22"}
-      - GENERATE_CLIENT_CONFIG=${SSHITMAIDS_GENERATE_CLIENT_CONFIG:-"false"}
       - CLIENT_DEST=${SSHITMAIDS_CLIENT_DEST:-"git@sshitmaids:22"}
+      - GENERATE_CLIENT_CONFIG=${SSHITMAIDS_GENERATE_CLIENT_CONFIG:-"false"}
+      - DO_KEYSCAN=${SSHITMAIDS_DO_KEYSCAN:-"false"}
     ports:
       - "${SSHITMAIDS_PUBLIC_PORT:-2222}:22"
     volumes:
       - ./volumes/sshitmaids:/root/sshitmaids
       - ./volumes/ssh-client:/root/ssh-client
+    tmpfs:
+      - /root/.ssh
     restart: unless-stopped
