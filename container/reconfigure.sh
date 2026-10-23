@@ -52,6 +52,14 @@ mkdir -p "$mitm_dir" "$client_dir"
 echo "3. Creating keys where they do not exist..."
 ###############################################################################
 
+# These files are bind-mounted into client containers (eg dirtclod-pi) where
+# the consuming agent user's ssh hard-fails on group/other-writable private
+# keys.  Constrain our umask so keygen/config/known_hosts are created with
+# private-ish modes (owner rw / no group or other) and not group-writable, even
+# on hosts where umask 002 (group-writable) is the norm.
+# 077 bitmask: owner full access, group/other none (letters: u=rwx,go=)
+umask 077
+
 # If the host SSH keys are not already stored in the persistant volume, 
 # back them up to there.
 if [ ! -f "$mitm_dir/ssh_host_ed25519_key" ]; then
@@ -177,15 +185,15 @@ echo "9. Fixing SSH permissions..."
 ###############################################################################
 echo "   for root..."
 chown -R root:root /root/.ssh
-chmod 700 /root/.ssh
+chmod u=rwx /root/.ssh
 # Ideally use find so empty globs don't need || true, which can hide real errors.
 # Keep the glob form here for legibility.
-chmod 600 /root/.ssh/* 2>/dev/null || true
+chmod u=rw,go-rwx /root/.ssh/* 2>/dev/null || true
 
 echo "   and $dest_user..."
 chown -R "$dest_user:$dest_user" "$user_dir/.ssh"
-chmod 700 "$user_dir/.ssh"
-chmod 600 "$user_dir/.ssh"/* 2>/dev/null || true
+chmod u=rwx "$user_dir/.ssh"
+chmod u=rw,go-rwx "$user_dir/.ssh"/* 2>/dev/null || true
 
 ###############################################################################
 echo ""
@@ -223,6 +231,8 @@ Host $dest_host
     User $client_dest_user
     IdentityFile ~/.ssh/id_ed25519
 EOF
+    # u=rw,go=r : owner read/write, group/other read-only
+    chmod u=rw,go=r "$client_dir/config"
     echo "   client ssh config generated."
 
     # Client known_hosts
@@ -231,6 +241,8 @@ EOF
         echo "# $CLIENT_DEST ($(basename $key))" >> $client_dir/known_hosts
         echo "$client_dest_host $(cat "$key")" >> $client_dir/known_hosts
     done
+    # u=rw,go=r : owner read/write, group/other read-only
+    chmod u=rw,go=r "$client_dir/known_hosts"
 else
     echo "   Skipping client config (SSHITMAIDS_GENERATE_CLIENT_CONFIG not 'true')."
     # Create client known_hosts even if config not generated
