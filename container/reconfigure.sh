@@ -231,7 +231,6 @@ Host $dest_host
     User $client_dest_user
     IdentityFile ~/.ssh/id_ed25519
 EOF
-    # 644 = owner read/write, group/other read-only (letter equivalent: u=rw,go=r)
     # u=rw,go=r : owner read/write, group/other read-only
     chmod u=rw,go=r "$client_dir/config"
     echo "   client ssh config generated."
@@ -242,7 +241,6 @@ EOF
         echo "# $CLIENT_DEST ($(basename $key))" >> $client_dir/known_hosts
         echo "$client_dest_host $(cat "$key")" >> $client_dir/known_hosts
     done
-    # 644 = owner read/write, group/other read-only (letter equivalent: u=rw,go=r)
     # u=rw,go=r : owner read/write, group/other read-only
     chmod u=rw,go=r "$client_dir/known_hosts"
 else
