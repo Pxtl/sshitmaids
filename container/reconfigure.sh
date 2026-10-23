@@ -52,6 +52,12 @@ mkdir -p "$mitm_dir" "$client_dir"
 echo "3. Creating keys where they do not exist..."
 ###############################################################################
 
+# These files are bind-mounted into client containers (eg dirtclod-pi) where
+# the consuming agent user's ssh hard-fails on group/other-writable private
+# keys.  Constrain our umask so keygen/config/known_hosts are created 0600/0644
+# and not group-writable, even on hosts where umask 002 is the norm.
+umask 077
+
 # If the host SSH keys are not already stored in the persistant volume, 
 # back them up to there.
 if [ ! -f "$mitm_dir/ssh_host_ed25519_key" ]; then
@@ -223,6 +229,7 @@ Host $dest_host
     User $client_dest_user
     IdentityFile ~/.ssh/id_ed25519
 EOF
+    chmod 644 "$client_dir/config"
     echo "   client ssh config generated."
 
     # Client known_hosts
@@ -231,6 +238,7 @@ EOF
         echo "# $CLIENT_DEST ($(basename $key))" >> $client_dir/known_hosts
         echo "$client_dest_host $(cat "$key")" >> $client_dir/known_hosts
     done
+    chmod 644 "$client_dir/known_hosts"
 else
     echo "   Skipping client config (SSHITMAIDS_GENERATE_CLIENT_CONFIG not 'true')."
     # Create client known_hosts even if config not generated
